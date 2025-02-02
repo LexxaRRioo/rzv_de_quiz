@@ -100,20 +100,42 @@ function next() {
     const selectedOptions = Array.from(optionContainer.children)
         .filter(opt => opt.classList.contains('selected'))
         .map(opt => parseInt(opt.id));
+    
+    console.log('Selected options:', selectedOptions);
+    
+    // Validate selection
+    if (selectedOptions.length === 0) {
+        showError('Пожалуйста, выберите ответ');
+        return;
+    }
+    
+    // For multiple choice questions, validate at least one option is selected
+    if (currentQuestion.isMultiple && selectedOptions.length === 0) {
+        showError('Выберите хотя бы один вариант ответа');
+        return;
+    }
+
+    // Clear any existing error message
+    const errorDiv = document.querySelector('.error-message');
+    if (errorDiv) {
+        errorDiv.textContent = '';
+    }
 
     userAnswers.push({
         question: currentQuestion.q,
         selected: selectedOptions
     });
-
-    // Увеличиваем счетчик только здесь
+    
+    console.log('User answers so far:', userAnswers);
     questionCounter++;
+    
+    console.log('Question counter:', questionCounter, 'Question limit:', questionLimit);
 
-    if (questionCounter < questionLimit) {
-        getNewQuestion();
-        answersIndicator(); // Обновляем индикаторы после каждого вопроса
-    } else {
+    if (questionCounter >= questionLimit) {
+        console.log('Quiz completed, calculating results...');
         quizOver();
+    } else {
+        getNewQuestion();
     }
 }
 
@@ -132,8 +154,8 @@ function answersIndicator(){
 
 function quizOver() {
     const nickname = document.getElementById('nickname').value;
+    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     
-    // Сначала вычислим результаты
     let correctCount = 0;
     userAnswers.forEach((userAnswer, index) => {
         const question = quiz.find(q => q.q === userAnswer.question);
@@ -150,18 +172,14 @@ function quizOver() {
         nickname: nickname,
         score: correctAnswers,
         percentage: percentage,
-        topic: document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value')
+        topic: selectedTopic
     };
 
-    if (useLocalStorage) {
-        LocalStorage.saveResult(result);
-    }
-
-    // Сначала меняем видимость
+    LocalStorage.saveResult(result);
+    
     quizBox.classList.add("hide");
     resultBox.classList.remove("hide");
     
-    // Затем обновляем содержимое
     quizResult();
     loadLeaderboard();
 }
@@ -237,14 +255,14 @@ function goToHome(){
     resetQuiz();
 }
 
-function startQuiz(){
+function startQuiz() {
+    console.log('Starting new quiz...');
     homeBox.classList.add("hide");
     quizBox.classList.remove("hide");
-    // Сбрасываем счетчики
-    questionCounter = 0;
-    correctAnswers = 0;
-    attempt = 0;
-    userAnswers = [];
+    
+    // Сбрасываем все индикаторы и контейнеры
+    answersIndicatorContainer.innerHTML = '';
+    optionContainer.innerHTML = '';
     
     setAvailableQuestions();
     getNewQuestion();
@@ -253,37 +271,76 @@ function startQuiz(){
 
 function validateAndStartQuiz() {
     const nickname = document.getElementById('nickname').value.trim();
-    const selectedTopic = document.querySelector('.dropdown-btn span').textContent;
-
-    if (nickname === '') {
+    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+    
+    console.log('Validating quiz start:', { nickname, selectedTopic });
+    
+    if (!nickname) {
         alert('Пожалуйста, введите никнейм');
         return;
     }
 
-    const leaderboard = LocalStorage.getLeaderboard(selectedTopic);
-    if (leaderboard.some(entry => entry.nickname === nickname)) {
-        alert('Этот никнейм уже существует. Вы не можете пройти тест повторно.');
-        loadLeaderboard(); // Загружаем таблицу лидеров
+    const existingResults = JSON.parse(localStorage.getItem('quizResults') || '{}');
+    console.log('Checking existing results:', existingResults);
+    
+    if (existingResults[selectedTopic] && 
+        existingResults[selectedTopic].some(entry => entry.nickname === nickname)) {
+        console.log('Found existing result for:', nickname);
+        showError('Этот тест можно пройти только один раз');
+        setTimeout(() => {
+            quizBox.classList.add("hide");
+            resultBox.classList.remove("hide");
+            loadLeaderboard();
+        }, 2000);
         return;
     }
 
+    // Полный сброс состояния перед началом
+    resetQuiz();
     startQuiz();
 }
 
+function resetQuiz() {
+    console.log('Resetting quiz state...');
+    questionCounter = 0;
+    correctAnswers = 0;
+    attempt = 0;
+    availableQuestions = [];
+    availableOptions = [];
+    userAnswers = [];
+    currentQuestion = null;
+}
+
 function loadLeaderboard() {
+    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+    console.log('Loading leaderboard for topic:', selectedTopic);
+    
     const leaderboardDiv = document.getElementById('leaderboard-content');
-    const results = LocalStorage.getLeaderboard();
+    const results = LocalStorage.getLeaderboard(selectedTopic);
+    console.log('Formatted leaderboard results:', results);
     
-    let html = '<table><tr><th>Место</th><th>Никнейм</th><th>Баллы</th></tr>';
-    let place = 1;
+    if (!results || results.length === 0) {
+        leaderboardDiv.innerHTML = '<p>Пока нет результатов</p>';
+        return;
+    }
     
-    results.forEach(data => {
+    let html = `<table>
+        <tr>
+            <th>Место</th>
+            <th>Никнейм</th>
+            <th>Баллы</th>
+            <th>Дата и время</th>
+        </tr>`;
+    
+    results.forEach((data, index) => {
+        const date = new Date(data.timestamp);
+        const formattedDate = date.toLocaleString('ru-RU');
         html += `<tr>
-            <td>${place}</td>
+            <td>${index + 1}</td>
             <td>${data.nickname}</td>
             <td>${data.score}</td>
+            <td>${formattedDate}</td>
         </tr>`;
-        place++;
     });
     
     html += '</table>';
@@ -314,6 +371,30 @@ function toggleDropdown(button) {
     } else {
         arrow.style.transform = 'rotate(180deg)';
     }
+}
+
+function showError(message, element) {
+    let errorDiv = document.querySelector('.error-message');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        
+        // Если передан элемент, вставляем перед ним
+        if (element) {
+            element.insertAdjacentElement('beforebegin', errorDiv);
+        } else {
+            // Иначе вставляем перед кнопкой "Поехали"
+            document.querySelector('.button-group').insertAdjacentElement('beforebegin', errorDiv);
+        }
+    }
+    
+    errorDiv.textContent = message;
+    errorDiv.style.color = 'red';
+    errorDiv.style.marginBottom = '10px';
+    
+    setTimeout(() => {
+        errorDiv.textContent = '';
+    }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
