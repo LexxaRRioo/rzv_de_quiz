@@ -104,7 +104,6 @@ class StorageFactory {
             return new LocalStorage();
         } else {
             console.log('Using Firebase');
-            // Загружаем Firebase скрипты
             await loadFirebaseScripts();
             
             const firebaseConfig = {
@@ -114,10 +113,9 @@ class StorageFactory {
                 storageBucket: "rzv-de-quiz.firebasestorage.app",
                 messagingSenderId: "410993032742",
                 appId: "1:410993032742:web:83fa6d2d4e30e6419df0e7",
-                databaseURL: process.env.FIREBASE_DATABASE_URL
+                databaseURL: ""
             };
 
-            // Инициализируем Firebase
             firebase.initializeApp(firebaseConfig);
             return new FirebaseStorage(firebase.app(), firebase.database());
         }
