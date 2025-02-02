@@ -16,7 +16,8 @@
 			<li>Принять участие в квизе можно только один раз с одним никнеймом</li>
 			<li>Каждый вопрос приносит один балл, если выбраны все верные варианты ответа и ни один неверный</li>
 			<li>Тест можно завершить досрочно, нажав кнопку "Завершить"</li>
-			<li>После завершения теста вы увидите свои результаты и сможете сравнить их с другими участниками</li>
+			<li>После завершения теста посмотри на результаты и сравни их с другими участниками</li>
+			<li>При одинаковом количестве баллов выше в таблице будет тот, кто потратил меньше времени</li>
 		</ul>
 		
 		<div class="nickname-input">
@@ -45,7 +46,10 @@
 
     <div class="quiz-box custom-box hide">
         <div class="question-number">
-
+            <div class="question-info">
+                <span class="current-question"></span>
+                <span class="timer">0</span>
+            </div>
         </div>
         <div class="question-text">
 
@@ -76,6 +80,10 @@
             <tr>
                 <td>Процент правильных ответов</td>
                 <td><span class="percentage"></span></td>
+            </tr>
+            <tr>
+                <td>Длительность раздумий</td>
+                <td><span class="time-spent"></span> сек</td>
             </tr>
         </table>
         <div id="correct-answers"></div>
