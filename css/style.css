@@ -516,3 +516,13 @@ body {
 #leaderboard-content tr:hover {
     background-color: #f8f8f8;
 }
+
+#leaderboard-content tr[style*="background-color"] td {
+    font-weight: 500;
+}
+
+#leaderboard-content tr td[colspan="4"] {
+    padding: 5px;
+    color: #666;
+    font-weight: normal;
+}

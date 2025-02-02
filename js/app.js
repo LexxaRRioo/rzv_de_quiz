@@ -286,7 +286,7 @@ function validateAndStartQuiz() {
     if (existingResults[selectedTopic] && 
         existingResults[selectedTopic].some(entry => entry.nickname === nickname)) {
         console.log('Found existing result for:', nickname);
-        showError('Этот тест можно пройти только один раз');
+        showError('Этот тест можно пройти только один раз. Загружаю таблицу лидеров...');
         setTimeout(() => {
             quizBox.classList.add("hide");
             resultBox.classList.remove("hide");
@@ -313,15 +313,42 @@ function resetQuiz() {
 
 function loadLeaderboard() {
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+    const currentNickname = document.getElementById('nickname').value;
     console.log('Loading leaderboard for topic:', selectedTopic);
     
     const leaderboardDiv = document.getElementById('leaderboard-content');
     const results = LocalStorage.getLeaderboard(selectedTopic);
-    console.log('Formatted leaderboard results:', results);
     
     if (!results || results.length === 0) {
         leaderboardDiv.innerHTML = '<p>Пока нет результатов</p>';
         return;
+    }
+    
+    // Сортировка по очкам (по убыванию) и никнейму (по алфавиту)
+    results.sort((a, b) => {
+        if (b.score !== a.score) {
+            return b.score - a.score;
+        }
+        return a.nickname.localeCompare(b.nickname);
+    });
+
+    // Находим индекс текущего пользователя
+    const currentUserIndex = results.findIndex(r => r.nickname === currentNickname);
+    
+    let rowsToShow = new Set();
+    
+    // Добавляем топ-5
+    for (let i = 0; i < Math.min(5, results.length); i++) {
+        rowsToShow.add(i);
+    }
+    
+    if (currentUserIndex !== -1) {
+        // Добавляем индексы вокруг текущего пользователя
+        for (let i = Math.max(0, currentUserIndex - 2); 
+             i <= Math.min(results.length - 1, currentUserIndex + 2); 
+             i++) {
+            rowsToShow.add(i);
+        }
     }
     
     let html = `<table>
@@ -332,15 +359,25 @@ function loadLeaderboard() {
             <th>Дата и время</th>
         </tr>`;
     
-    results.forEach((data, index) => {
+    let lastShownIndex = -1;
+    
+    Array.from(rowsToShow).sort((a, b) => a - b).forEach(index => {
+        if (lastShownIndex !== -1 && index - lastShownIndex > 1) {
+            html += `<tr><td colspan="4" style="text-align: center;">...</td></tr>`;
+        }
+        
+        const data = results[index];
         const date = new Date(data.timestamp);
         const formattedDate = date.toLocaleString('ru-RU');
-        html += `<tr>
+        
+        html += `<tr${data.nickname === currentNickname ? ' style="background-color: #e6f3ff;"' : ''}>
             <td>${index + 1}</td>
             <td>${data.nickname}</td>
             <td>${data.score}</td>
             <td>${formattedDate}</td>
         </tr>`;
+        
+        lastShownIndex = index;
     });
     
     html += '</table>';
