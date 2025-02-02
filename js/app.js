@@ -183,11 +183,9 @@ function answersIndicator(){
 }
 
 async function quizOver() {
-    await storage.saveResult(result);
     const timeSpent = stopTimer();
     const nickname = document.getElementById('nickname').value;
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
-
 
     let correctCount = 0;
     userAnswers.forEach((userAnswer, index) => {
@@ -208,6 +206,8 @@ async function quizOver() {
         topic: selectedTopic,
         timeSpent: parseFloat(timeSpent)
     };
+
+    await storage.saveResult(result);
     
     quizBox.classList.add("hide");
     resultBox.classList.remove("hide");
@@ -333,36 +333,33 @@ function validateNickname(nickname) {
 
 async function validateAndStartQuiz() {
     const nickname = document.getElementById('nickname').value.trim();
-    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
-    const userResult = await storage.getUserResult(selectedTopic, nickname);
+    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected');
+    
+    // Очищаем предыдущие сообщения об ошибках
+    clearErrorMessages();
     
     if (!nickname) {
-        showError('Введи никнейм', document.querySelector('.nickname-input'));
-        return;
-    }
-
-    if (!validateNickname(nickname)) {
-        showError('Никнейм может содержать только английские буквы, цифры, _ и -', document.querySelector('.nickname-input'));
+        showError('nickname-error', 'Пожалуйста, введите никнейм');
         return;
     }
     
-    if (userResult) {     
-        // Загружаем предыдущие результаты
-        questionLimit = userResult.totalQuestions;
-        correctAnswers = userResult.score;
-        userAnswers = userResult.answers;
-        elapsedTime = userResult.timeSpent;
-        
-        // Показываем результаты
-        homeBox.classList.add("hide");
-        resultBox.classList.remove("hide");
-        quizResult();
-        loadLeaderboard();
+    if (!selectedTopic) {
+        showError('topic-error', 'Пожалуйста, выберите тему');
         return;
     }
 
-    resetQuiz();
-    startQuiz();
+    // Дожидаемся инициализации хранилища, если оно ещё не инициализировано
+    if (!window.storage) {
+        await window.initializeApp();
+    }
+    
+    // Начинаем квиз
+    homeBox.classList.add("hide");
+    quizBox.classList.remove("hide");
+    setAvailableQuestions();
+    getNewQuestion();
+    answersIndicator();
+    startTimer();
 }
 
 async function loadLeaderboard() {

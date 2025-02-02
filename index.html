@@ -105,8 +105,12 @@
     </div>
 
     <script type="module">
-        import { storage } from './js/storage.js';
-        window.storage = storage;
+        import { initStorage } from './js/storage.js';
+        // Инициализируем хранилище при загрузке страницы
+        window.initializeApp = async () => {
+            window.storage = await initStorage();
+        };
+        window.initializeApp();
     </script>
     <script src="js/question.js"></script>
     <script src="js/app.js"></script>
