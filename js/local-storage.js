@@ -15,7 +15,8 @@ const LocalStorage = {
             answers: userAnswers.map(answer => {
                 const question = quiz.find(q => q.q === answer.question);
                 return {
-                    ...answer,
+                    question: answer.question,
+                    selected: answer.selected,
                     isCorrect: Array.isArray(question.answer) 
                         ? JSON.stringify(answer.selected.sort()) === JSON.stringify(question.answer.sort())
                         : answer.selected[0] === question.answer
@@ -33,7 +34,12 @@ const LocalStorage = {
         }
         
         localStorage.setItem('quizResults', JSON.stringify(results));
-        console.log('Updated results:', JSON.parse(localStorage.getItem('quizResults')));
+        
+        // Сохраняем отдельно информацию о последнем тесте пользователя
+        localStorage.setItem(`lastQuiz_${result.nickname}_${result.topic}`, JSON.stringify({
+            timestamp: new Date().toISOString(),
+            completed: true
+        }));
     },
 
     getLeaderboard: function(topic) {
@@ -47,5 +53,15 @@ const LocalStorage = {
         }
         
         return results[topic].sort((a, b) => b.score - a.score);
+    },
+
+    getUserResult: function(topic, nickname) {
+        const results = JSON.parse(localStorage.getItem('quizResults') || '{}');
+        
+        if (!results[topic] || !Array.isArray(results[topic])) {
+            return null;
+        }
+        
+        return results[topic].find(entry => entry.nickname === nickname) || null;
     }
 };

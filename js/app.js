@@ -106,24 +106,22 @@ function next() {
         .filter(opt => opt.classList.contains('selected'))
         .map(opt => parseInt(opt.id));
     
-    console.log('Selected options:', selectedOptions);
-    
     // Validate selection
     if (selectedOptions.length === 0) {
-        showError('Пожалуйста, выберите ответ');
+        showError('Пожалуйста, выберите ответ', optionContainer);
         return;
     }
     
     // For multiple choice questions, validate at least one option is selected
     if (currentQuestion.isMultiple && selectedOptions.length === 0) {
-        showError('Выберите хотя бы один вариант ответа');
+        showError('Выберите хотя бы один вариант ответа', optionContainer);
         return;
     }
 
     // Clear any existing error message
     const errorDiv = document.querySelector('.error-message');
     if (errorDiv) {
-        errorDiv.textContent = '';
+        errorDiv.remove();
     }
 
     userAnswers.push({
@@ -131,13 +129,10 @@ function next() {
         selected: selectedOptions
     });
     
-    console.log('User answers so far:', userAnswers);
     questionCounter++;
+    answersIndicator();
     
-    console.log('Question counter:', questionCounter, 'Question limit:', questionLimit);
-
     if (questionCounter >= questionLimit) {
-        console.log('Quiz completed, calculating results...');
         quizOver();
     } else {
         getNewQuestion();
@@ -146,10 +141,14 @@ function next() {
 
 function answersIndicator(){
     answersIndicatorContainer.innerHTML = '';
+    // Убираем отображение индикатора во время теста
+    if (questionCounter === questionLimit) {
+        return;
+    }
+    
     const totalQuestion = questionLimit;
     for(let i=0; i<totalQuestion; i++){
         const indicator = document.createElement("div");
-        // Отмечаем все предыдущие вопросы как отвеченные
         if (i < questionCounter) {
             indicator.classList.add('answered');
         }
@@ -189,23 +188,46 @@ function quizOver() {
     loadLeaderboard();
 }
 
-function quizResult(){
-    // Обновляем основную информацию
-    document.querySelector(".result-box .total-question").textContent = questionLimit;
-    document.querySelector(".result-box .total-score").textContent = `${correctAnswers} / ${questionLimit}`;
-    document.querySelector(".result-box .percentage").textContent = ((correctAnswers/questionLimit)*100).toFixed(2) + "%";
+function quizResult() {
+    document.querySelector(".total-question").textContent = questionLimit;
+    document.querySelector(".total-score").textContent = `${correctAnswers} / ${questionLimit}`;
+    document.querySelector(".percentage").textContent = ((correctAnswers/questionLimit)*100).toFixed(2) + "%";
 
-    // Очищаем предыдущие результаты
-    const existingResults = resultBox.querySelectorAll('#correct-answers, #wrong-answers');
+    const existingResults = resultBox.querySelectorAll('.answers-details');
     existingResults.forEach(el => el.remove());
 
-    // Создаем новые списки для правильных и неправильных ответов
+    // Создаем контейнер для деталей
+    const detailsContainer = document.createElement("div");
+    detailsContainer.className = "answers-details";
+
+    // Создаем секцию правильных ответов
+    const correctDetails = document.createElement("details");
+    const correctSummary = document.createElement("summary");
+    correctSummary.textContent = `Верные ответы (${userAnswers.filter(answer => {
+        const question = quiz.find(q => q.q === answer.question);
+        return Array.isArray(question.answer)
+            ? JSON.stringify(answer.selected.sort()) === JSON.stringify(question.answer.sort())
+            : answer.selected[0] === question.answer;
+    }).length})`;
     const correctAnswersList = document.createElement("div");
-    const wrongAnswersList = document.createElement("div");
     correctAnswersList.id = "correct-answers";
+    correctDetails.appendChild(correctSummary);
+    correctDetails.appendChild(correctAnswersList);
+
+    // Создаем секцию неправильных ответов
+    const wrongDetails = document.createElement("details");
+    const wrongSummary = document.createElement("summary");
+    const wrongCount = userAnswers.filter(answer => {
+        const question = quiz.find(q => q.q === answer.question);
+        return !(Array.isArray(question.answer)
+            ? JSON.stringify(answer.selected.sort()) === JSON.stringify(question.answer.sort())
+            : answer.selected[0] === question.answer);
+    }).length;
+    wrongSummary.textContent = `Неполные или неверные ответы (${wrongCount})`;
+    const wrongAnswersList = document.createElement("div");
     wrongAnswersList.id = "wrong-answers";
-    correctAnswersList.innerHTML = "<h3>Верные ответы</h3>";
-    wrongAnswersList.innerHTML = "<h3>Неполные или неверные ответы</h3>";
+    wrongDetails.appendChild(wrongSummary);
+    wrongDetails.appendChild(wrongAnswersList);
 
     userAnswers.forEach((userAnswer) => {
         const question = quiz.find(q => q.q === userAnswer.question);
@@ -233,10 +255,11 @@ function quizResult(){
         }
     });
 
-    // Добавляем списки на страницу
+    detailsContainer.appendChild(correctDetails);
+    detailsContainer.appendChild(wrongDetails);
+
     const leaderboardElement = resultBox.querySelector('.leaderboard');
-    resultBox.insertBefore(correctAnswersList, leaderboardElement);
-    resultBox.insertBefore(wrongAnswersList, leaderboardElement);
+    resultBox.insertBefore(detailsContainer, leaderboardElement);
 }
 
 function resetQuiz(){
@@ -261,13 +284,8 @@ function goToHome(){
 }
 
 function startQuiz() {
-    console.log('Starting new quiz...');
     homeBox.classList.add("hide");
     quizBox.classList.remove("hide");
-    
-    // Сбрасываем все индикаторы и контейнеры
-    answersIndicatorContainer.innerHTML = '';
-    optionContainer.innerHTML = '';
     
     setAvailableQuestions();
     getNewQuestion();
@@ -285,35 +303,28 @@ function validateAndStartQuiz() {
         return;
     }
 
-    const existingResults = JSON.parse(localStorage.getItem('quizResults') || '{}');
-    console.log('Checking existing results:', existingResults);
+    // Проверяем существующие результаты
+    const userResult = LocalStorage.getUserResult(selectedTopic, nickname);
     
-    if (existingResults[selectedTopic] && 
-        existingResults[selectedTopic].some(entry => entry.nickname === nickname)) {
-        console.log('Found existing result for:', nickname);
-        showError('Этот тест можно пройти только один раз. Загружаю таблицу лидеров...');
-        setTimeout(() => {
-            quizBox.classList.add("hide");
-            resultBox.classList.remove("hide");
-            loadLeaderboard();
-        }, 2000);
+    if (userResult) {
+        console.log('Found existing result:', userResult);
+        showError('Тест уже пройден, вы можете посмотреть результаты');
+        // Загружаем предыдущие результаты
+        questionLimit = userResult.totalQuestions;
+        correctAnswers = userResult.score;
+        userAnswers = userResult.answers;
+        
+        // Показываем результаты
+        quizBox.classList.add("hide");
+        resultBox.classList.remove("hide");
+        quizResult();
+        loadLeaderboard();
         return;
     }
 
-    // Полный сброс состояния перед началом
+    // Если результатов нет, начинаем новый тест
     resetQuiz();
     startQuiz();
-}
-
-function resetQuiz() {
-    console.log('Resetting quiz state...');
-    questionCounter = 0;
-    correctAnswers = 0;
-    attempt = 0;
-    availableQuestions = [];
-    availableOptions = [];
-    userAnswers = [];
-    currentQuestion = null;
 }
 
 function loadLeaderboard() {
@@ -423,7 +434,7 @@ function showError(message, element) {
         
         // Если передан элемент, вставляем перед ним
         if (element) {
-            element.insertAdjacentElement('beforebegin', errorDiv);
+            element.insertAdjacentElement('afterend', errorDiv);
         } else {
             // Иначе вставляем перед кнопкой "Поехали"
             document.querySelector('.button-group').insertAdjacentElement('beforebegin', errorDiv);
@@ -436,7 +447,7 @@ function showError(message, element) {
     
     setTimeout(() => {
         errorDiv.textContent = '';
-    }, 3000);
+    }, 2000);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
