@@ -106,17 +106,7 @@ class StorageFactory {
             console.log('Using Firebase');
             await loadFirebaseScripts();
             
-            const firebaseConfig = {
-                apiKey: "__FIREBASE_API_KEY__",
-                authDomain: "__FIREBASE_AUTH_DOMAIN__",
-                projectId: "__FIREBASE_PROJECT_ID__",
-                storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-                messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-                appId: "__FIREBASE_APP_ID__",
-                databaseURL: "__FIREBASE_DATABASE_URL__"
-            };
-
-            firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(window.appConfig.firebase);
             return new FirebaseStorage(firebase.app(), firebase.database());
         }
     }
