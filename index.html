@@ -79,7 +79,16 @@
         <div class="leaderboard">
             <h2>Таблица лидеров</h2>
             <div id="leaderboard-content"></div>
+            <button type="button" class="btn view-full-leaderboard" onclick="showFullLeaderboard()">
+                Показать полную таблицу
+            </button>
         </div>
+    </div>
+
+    <div class="full-leaderboard-box custom-box hide">
+        <h1>Полная таблица лидеров</h1>
+        <div id="full-leaderboard-content"></div>
+        <button type="button" class="btn go-back-btn" onclick="hideFullLeaderboard()">Назад</button>
     </div>
 
     <!-- <script src="js/config.js"></script> -->

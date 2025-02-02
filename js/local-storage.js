@@ -2,30 +2,34 @@ const LocalStorage = {
     saveResult: function(result) {
         console.log('Saving result:', result);
         let results = JSON.parse(localStorage.getItem('quizResults') || '{}');
-        console.log('Current stored results:', results);
         
         if (!results[result.topic]) {
             results[result.topic] = [];
         }
         
-        // Check if user already has result
+        // Добавляем дополнительную информацию
+        const fullResult = {
+            ...result,
+            timestamp: new Date().toISOString(),
+            totalQuestions: questionLimit,
+            answers: userAnswers.map(answer => {
+                const question = quiz.find(q => q.q === answer.question);
+                return {
+                    ...answer,
+                    isCorrect: Array.isArray(question.answer) 
+                        ? JSON.stringify(answer.selected.sort()) === JSON.stringify(question.answer.sort())
+                        : answer.selected[0] === question.answer
+                };
+            })
+        };
+        
         const existingIndex = results[result.topic]
             .findIndex(entry => entry.nickname === result.nickname);
             
         if (existingIndex >= 0) {
-            // Update existing result if score is better
-            if (result.score > results[result.topic][existingIndex].score) {
-                results[result.topic][existingIndex] = {
-                    ...result,
-                    timestamp: new Date().toISOString()
-                };
-            }
+            results[result.topic][existingIndex] = fullResult;
         } else {
-            // Add new result
-            results[result.topic].push({
-                ...result,
-                timestamp: new Date().toISOString()
-            });
+            results[result.topic].push(fullResult);
         }
         
         localStorage.setItem('quizResults', JSON.stringify(results));

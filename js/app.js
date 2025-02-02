@@ -15,6 +15,11 @@ let attempt = 0;
 let questionLimit = 0;
 let userAnswers = []; // Массив для хранения ответов пользователя
 
+const ITEMS_PER_PAGE = 20; // Количество элементов на "страницу"
+let currentPage = 1;
+let isLoading = false;
+let hasMoreItems = true;
+
 // Убедитесь, что эта строка не дублируется
 // const useLocalStorage = true;
 
@@ -473,3 +478,188 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdownItems[0].click(); // Это действие выберет первый элемент
     }
 });
+
+function loadPreviousResults(nickname, topic) {
+    const results = LocalStorage.getLeaderboard(topic);
+    const userResult = results.find(r => r.nickname === nickname);
+    
+    if (!userResult) {
+        document.querySelector('.result-box').innerHTML = '<p>Результаты не найдены</p>';
+        return;
+    }
+    
+    // Загружаем основную информацию
+    document.querySelector(".total-question").textContent = userResult.totalQuestions || 0;
+    document.querySelector(".total-score").textContent = `${userResult.score} / ${userResult.totalQuestions || 0}`;
+    document.querySelector(".percentage").textContent = userResult.percentage.toFixed(2) + "%";
+    
+    // Загружаем детальные ответы
+    if (userResult.answers) {
+        displayDetailedAnswers(userResult.answers);
+    }
+}
+
+function displayDetailedAnswers(answers) {
+    const correctAnswersList = document.createElement("div");
+    const wrongAnswersList = document.createElement("div");
+    correctAnswersList.id = "correct-answers";
+    wrongAnswersList.id = "wrong-answers";
+    
+    const detailsContainer = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Подробные результаты";
+    detailsContainer.appendChild(summary);
+    
+    correctAnswersList.innerHTML = "<h3>Верные ответы</h3>";
+    wrongAnswersList.innerHTML = "<h3>Неполные или неверные ответы</h3>";
+    
+    answers.forEach(answer => {
+        const question = quiz.find(q => q.q === answer.question);
+        if (!question) return;
+        
+        const questionDiv = document.createElement("div");
+        questionDiv.className = "question-result";
+        questionDiv.innerHTML = `
+            <p><strong>${question.q}</strong></p>
+            <p>Ваш ответ: ${answer.selected.map(i => question.options[i]).join(', ')}</p>
+            <p>Правильный ответ: ${Array.isArray(question.answer) 
+                ? question.answer.map(i => question.options[i]).join(', ')
+                : question.options[question.answer]}</p>
+        `;
+        
+        if (answer.isCorrect) {
+            correctAnswersList.appendChild(questionDiv);
+        } else {
+            if (question.explanation) {
+                questionDiv.innerHTML += `<p class="explanation">Объяснение: ${question.explanation}</p>`;
+            }
+            wrongAnswersList.appendChild(questionDiv);
+        }
+    });
+    
+    detailsContainer.appendChild(correctAnswersList);
+    detailsContainer.appendChild(wrongAnswersList);
+    
+    const resultBox = document.querySelector('.result-box');
+    const leaderboardElement = resultBox.querySelector('.leaderboard');
+    resultBox.insertBefore(detailsContainer, leaderboardElement);
+}
+
+function showFullLeaderboard() {
+    const resultBox = document.querySelector('.result-box');
+    const fullLeaderboardBox = document.querySelector('.full-leaderboard-box');
+    resultBox.classList.add('hide');
+    fullLeaderboardBox.classList.remove('hide');
+    
+    loadFullLeaderboard();
+}
+
+function hideFullLeaderboard() {
+    const resultBox = document.querySelector('.result-box');
+    const fullLeaderboardBox = document.querySelector('.full-leaderboard-box');
+    fullLeaderboardBox.classList.add('hide');
+    resultBox.classList.remove('hide');
+    
+    // Удаляем обработчик скролла
+    fullLeaderboardBox.removeEventListener('scroll', handleScroll);
+    
+    // Сбрасываем состояние пагинации
+    currentPage = 1;
+    isLoading = false;
+    hasMoreItems = true;
+}
+
+function loadFullLeaderboard(resetPagination = true) {
+    const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+    const currentNickname = document.getElementById('nickname').value;
+    const results = LocalStorage.getLeaderboard(selectedTopic);
+    
+    if (resetPagination) {
+        currentPage = 1;
+        hasMoreItems = true;
+        const leaderboardContent = document.getElementById('full-leaderboard-content');
+        leaderboardContent.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Место</th>
+                        <th>Никнейм</th>
+                        <th>Баллы</th>
+                        <th>Дата и время</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-tbody"></tbody>
+            </table>
+            <div id="loading-indicator" style="display: none; text-align: center; padding: 20px;">
+                Загрузка...
+            </div>`;
+        
+        // Добавляем обработчик скролла
+        const fullLeaderboardBox = document.querySelector('.full-leaderboard-box');
+        fullLeaderboardBox.addEventListener('scroll', handleScroll);
+    }
+    
+    loadMoreItems(results, currentNickname);
+}
+
+function loadMoreItems(results, currentNickname) {
+    if (isLoading || !hasMoreItems) return;
+    
+    isLoading = true;
+    const tbody = document.getElementById('leaderboard-tbody');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator.style.display = 'block';
+    
+    // Имитируем задержку загрузки для более плавного UX
+    setTimeout(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageItems = results.slice(startIndex, endIndex);
+        
+        if (pageItems.length === 0) {
+            hasMoreItems = false;
+            loadingIndicator.style.display = 'none';
+            isLoading = false;
+            return;
+        }
+        
+        pageItems.forEach((data, index) => {
+            const absoluteIndex = startIndex + index;
+            const date = new Date(data.timestamp);
+            const formattedDate = date.toLocaleString('ru-RU');
+            
+            const row = document.createElement('tr');
+            if (data.nickname === currentNickname) {
+                row.style.backgroundColor = '#e6f3ff';
+            }
+            
+            row.innerHTML = `
+                <td>${absoluteIndex + 1}</td>
+                <td>${data.nickname}</td>
+                <td>${data.score}</td>
+                <td>${formattedDate}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        currentPage++;
+        isLoading = false;
+        loadingIndicator.style.display = 'none';
+        
+        if (endIndex >= results.length) {
+            hasMoreItems = false;
+        }
+    }, 300);
+}
+
+function handleScroll(event) {
+    const element = event.target;
+    // Загружаем новые элементы, когда пользователь прокрутил до конца с небольшим запасом
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 100) {
+        const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+        const currentNickname = document.getElementById('nickname').value;
+        const results = LocalStorage.getLeaderboard(selectedTopic);
+        loadMoreItems(results, currentNickname);
+    }
+}

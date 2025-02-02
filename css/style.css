@@ -526,3 +526,52 @@ body {
     color: #666;
     font-weight: normal;
 }
+
+.full-leaderboard-box {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+details {
+    margin: 20px 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+details summary {
+    cursor: pointer;
+    padding: 10px;
+    font-weight: 500;
+    color: #17A4CB;
+}
+
+details summary:hover {
+    background-color: #f8f8f8;
+}
+
+.view-full-leaderboard {
+    margin-top: 20px;
+    width: 100%;
+}
+
+#loading-indicator {
+    color: #666;
+    font-size: 14px;
+    padding: 20px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9));
+}
+
+.full-leaderboard-box table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.full-leaderboard-box thead {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
