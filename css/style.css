@@ -9,7 +9,6 @@ body {
 }
 
 * {
-
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -63,7 +62,6 @@ body {
     line-height: 22px;
 }
 
-
 .home-box p span {
     font-weight: 500;
 }
@@ -79,23 +77,28 @@ body {
 
 .btn {
     background-color: #17A4CB;
-    padding: 15px 45px;
+    padding: 10px 20px;
     border-radius: 10px;
     color: white;
     border: none;
     font-family: 'Montserrat', sans-serif;
     font-size: 16px;
     display: inline-block;
+    width: auto;
+    text-align: center;
+    height: 50px;
 }
 
 .exit-btn {
- background-color: red;
- float: right;
+    background-color: red;
+    float: right;
 }
+
 .exit-btn:hover {
     box-shadow: 0 0 0 1.5px rgb(0 0 0 / 40%);
     transform: box-shadow 200ms ease-out;
 }
+
 .next-btn:hover,
 .go-home-btn:hover,
 .try-again-btn:hover,
@@ -130,7 +133,6 @@ body {
     padding: 20px 0;
     margin: 0;
 }
-
 
 .quiz-box .question-text img {
     max-width: 100%;
@@ -186,7 +188,6 @@ body {
     z-index: -1;
     animation: slideInLeft .5s ease forwards;
 }
-
 
 @keyframes slideInLeft {
     0% {
@@ -291,4 +292,156 @@ body {
     body {
         padding: 5px;
     }
+}
+
+.button-group {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.custom-select {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-select select {
+    display: none;
+}
+
+.custom-select .btn {
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-select .btn:hover,
+.btn:hover {
+    box-shadow: 0 0 0 1.5px rgb(0 0 0 / 40%);
+    cursor: pointer;
+}
+
+.select-items {
+    position: absolute;
+    background-color: white;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    z-index: 99;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.select-items div {
+    padding: 15px 45px;
+    cursor: pointer;
+    user-select: none;
+    color: black;
+}
+
+.select-items.select-hide {
+    display: none;
+}
+
+.select-items:not(.select-hide) {
+    display: block;
+}
+
+.select-label {
+    display: block;
+    margin-bottom: 8px;
+    color: black;
+    font-weight: 500;
+}
+
+.same-as-selected {
+    background-color: #f1f1f1;
+}
+
+.button-group .btn {
+    flex: 1;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    margin-top: 5px;
+    z-index: 1000;
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 15px 20px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown-btn {
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.option.selected {
+    background-color: #f1f1f1;
+}
+
+.option {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: 1px solid #cccccc;
+    transition: background-color 0.3s ease;
+}
+
+.question-result {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+.question-result p {
+    margin: 10px 0;
+}
+
+.explanation {
+    color: #666;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+#correct-answers h3,
+#wrong-answers h3 {
+    margin: 20px 0 10px;
+    color: #333;
+}
+
+#correct-answers .question-result {
+    border-left: 4px solid #4CAF50;
+}
+
+#wrong-answers .question-result {
+    border-left: 4px solid #f44336;
 }

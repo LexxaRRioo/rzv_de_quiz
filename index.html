@@ -1,29 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
-	<title>Quizziee</title>
+	<title>rzv_de_quiz</title>
 	<link rel="icon" href="img/logo.png" type="image/x-icon">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="css/style.css">
+	<meta charset="UTF-8">
 </head>
 
 <body>
 	<div class="home-box custom-box">
-		<h3>Instructions</h3>
-		<p>Total number of questions: <span class="total-question"></span></p>
-		<p>You can attempt the quiz multiple times</p>
-		<p>Each question carries one point. No negative marking for wrong answers</p>
-		<p>Questions are of Multiple Choice</p>
-		<button type="button" class="btn" onclick="startQuiz()">Start Quiz</button>
-		<label for="topic">Choose Topic:</label>
-
-		<select name="topic" id="topic">
-			<option value="sports">Sports</option>
-			<option value="logic">Logic</option>
-			<option value="gk">GK</option>
-			<option value="computer">Computer</option>
-		</select>
+		<h3>Инструкции</h3>
+		<p>Количество вопросов: <span class="total-question"></span></p>
+		<p>Принять участие в квизе можно только один раз</p>
+		<p>Каждый вопрос приносит один балл, если выбраны все верные варианты ответа и ни один неверный</p>
+		
+		<div class="nickname-input">
+			<label for="nickname">Введи никнейм для таблицы лидеров:</label>
+			<input type="text" id="nickname" required>
+		</div>
+		
+		<div class="button-group">
+			<div class="custom-select">
+				<label for="topic" class="select-label">Выбери опрос</label>
+				<button type="button" class="btn dropdown-btn">
+					<span>Оцени свои знания в DE!</span>
+					<span class="arrow">▼</span>
+				</button>
+				<div class="dropdown-content">
+					<div class="dropdown-item" data-value="de-self-evaluate">Оцени свои знания в DE!</div>
+					<div class="dropdown-item" data-value="test-quiz">Тестовый тест</div>
+				</div>
+			</div>
+			
+			<button type="button" class="btn" onclick="validateAndStartQuiz()">🚀 Поехали</button>
+		</div>
 	</div>
 
     <div class="quiz-box custom-box hide">
@@ -37,8 +49,8 @@
 
         </div>
         <div class="next-question-btn">
-            <button type="button" class="btn next-btn" onclick="next()">Next</button>
-            <button type="button" class="btn exit-btn" onclick="quizOver()">Quit</button>
+            <button type="button" class="btn next-btn" onclick="next()">Дальше</button>
+            <button type="button" class="btn exit-btn" onclick="quizOver()">Завершить</button>
         </div>
         <div class="answers-indicator">
 
@@ -46,37 +58,33 @@
     </div>
 
     <div class="result-box custom-box hide">
-        <h1>Result</h1>
+        <h1>Результаты</h1>
         <table>
             <tr>
-                <td>Total Question</td>
+                <td>Количество вопросов</td>
                 <td><span class="total-question"></span></td>
             </tr>
             <tr>
-                <td>Attempt</td>
-                <td><span class="total-attempt"></span></td>
-            </tr>
-            <tr>
-                <td>Correct</td>
-                <td><span class="total-correct"></span></td>
-            </tr>
-            <tr>
-                <td>Wrong</td>
-                <td><span class="total-wrong"></span></td>
-            </tr>
-            <tr>
-                <td>Percentage</td>
-                <td><span class="percentage"></span></td>
-            </tr>
-            <tr>
-                <td>Your Total Score</td>
+                <td>Набранный балл</td>
                 <td><span class="total-score"></span></td>
             </tr>
+            <tr>
+                <td>Процент правильных ответов</td>
+                <td><span class="percentage"></span></td>
+            </tr>
         </table>
-        <button type="button" class="btn try-again-btn" onclick="tryAgain()">Try Again</button>
-        <button type="button" class="btn go-home-btn" onclick="goToHome()">Go To Home</button>
+        <div id="correct-answers"></div>
+        <div id="wrong-answers"></div>
+        <button type="button" class="btn go-home-btn" onclick="goToHome()">На главную</button>
+        <div class="leaderboard">
+            <h2>Таблица лидеров</h2>
+            <div id="leaderboard-content"></div>
+        </div>
     </div>
 
+    <!-- <script src="js/config.js"></script> -->
+    <script src="js/config.local.js"></script>
+    <script src="js/local-storage.js"></script>
     <script src="js/question.js"></script>
     <script src="js/app.js"></script>
 </body>
