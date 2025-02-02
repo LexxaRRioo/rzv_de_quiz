@@ -23,6 +23,20 @@ let hasMoreItems = true;
 // Убедитесь, что эта строка не дублируется
 // const useLocalStorage = true;
 
+// Инициализация переменных таймера
+let startTime = null;
+let elapsedTime = 0;
+let timerInterval = null;
+
+// Проверка наличия элемента таймера при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const timerElement = document.querySelector('.quiz-box .timer');
+    console.log('Элемент таймера при загрузке:', timerElement);
+    if (!timerElement) {
+        console.error('Элемент таймера не найден при загрузке страницы!');
+    }
+});
+
 function setAvailableQuestions(){
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected') 
         ? document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value') 
@@ -43,12 +57,25 @@ function setAvailableQuestions(){
 }
 
 function getNewQuestion(){
+    console.log('Получение нового вопроса');
+    scrollToTop();
+    
+    // Проверка таймера
+    const timerElement = document.querySelector('.quiz-box .timer');
+    console.log('Элемент таймера при новом вопросе:', timerElement);
+    if (!timerElement) {
+        console.error('Таймер не найден при смене вопроса!');
+    } else {
+        console.log('Текущее значение таймера:', timerElement.textContent);
+    }
+    
     if (availableQuestions.length === 0) {
         console.error("Нет доступных вопросов!");
         return;
     }
 
-    questionNumber.innerHTML = "Вопрос " + (questionCounter + 1) + " из " + questionLimit;
+    const currentQuestionElement = document.querySelector('.current-question');
+    currentQuestionElement.textContent = "Вопрос " + (questionCounter + 1) + " из " + questionLimit;
     
     // Берем вопросы последовательно, а не случайно
     currentQuestion = availableQuestions[0];
@@ -108,17 +135,16 @@ function next() {
     
     // For multiple choice questions, validate at least one option is selected
     if (currentQuestion.isMultiple && selectedOptions.length === 0) {
-        showError('Выберите хотя бы один вариант ответа', document.querySelector('.option-container'));
+        showError('Выбери хотя бы один вариант ответа', document.querySelector('.option-container'));
         return;
     }
     
     // Validate selection
     if (selectedOptions.length === 0) {
-        showError('Выберите ответ', document.querySelector('.option-container'));
+        showError('Выбери ответ', document.querySelector('.option-container'));
         return;
     }
 
-    // Clear any existing error message
     const errorDiv = document.querySelector('.error-message');
     if (errorDiv) {
         errorDiv.remove();
@@ -135,7 +161,10 @@ function next() {
     if (questionCounter >= questionLimit) {
         quizOver();
     } else {
-        getNewQuestion();
+        setTimeout(() => {
+            scrollToTop();
+            getNewQuestion();
+        }, 50)
     }
 }
 
@@ -157,6 +186,7 @@ function answersIndicator(){
 }
 
 function quizOver() {
+    const timeSpent = stopTimer();
     const nickname = document.getElementById('nickname').value;
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     
@@ -176,7 +206,8 @@ function quizOver() {
         nickname: nickname,
         score: correctAnswers,
         percentage: percentage,
-        topic: selectedTopic
+        topic: selectedTopic,
+        timeSpent: parseFloat(timeSpent)
     };
 
     LocalStorage.saveResult(result);
@@ -192,7 +223,8 @@ function quizResult() {
     document.querySelector(".total-question").textContent = questionLimit;
     document.querySelector(".total-score").textContent = `${correctAnswers} / ${questionLimit}`;
     document.querySelector(".percentage").textContent = ((correctAnswers/questionLimit)*100).toFixed(2) + "%";
-
+    document.querySelector(".time-spent").textContent = elapsedTime;
+    
     const existingResults = resultBox.querySelectorAll('.answers-details');
     existingResults.forEach(el => el.remove());
 
@@ -278,18 +310,23 @@ function tryAgain(){
 }
 
 function goToHome(){
+    scrollToTop();
     resultBox.classList.add("hide");
     homeBox.classList.remove("hide");
     resetQuiz();
 }
 
 function startQuiz() {
+    console.log('Начало квиза');
     homeBox.classList.add("hide");
     quizBox.classList.remove("hide");
-    
+    scrollToTop();
     setAvailableQuestions();
     getNewQuestion();
     answersIndicator();
+    console.log('Вызываем startTimer()');
+    startTimer();
+    console.log('Таймер запущен');
 }
 
 function validateNickname(nickname) {
@@ -302,7 +339,7 @@ function validateAndStartQuiz() {
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     
     if (!nickname) {
-        showError('Введите никнейм', document.querySelector('.nickname-input'));
+        showError('Введи никнейм', document.querySelector('.nickname-input'));
         return;
     }
 
@@ -314,8 +351,18 @@ function validateAndStartQuiz() {
     // Проверяем существующие результаты
     const userResult = LocalStorage.getUserResult(selectedTopic, nickname);
     
-    if (userResult) {
-        showError('Тест уже пройден, вы можете посмотреть результаты', document.querySelector('.button-group'));
+    if (userResult) {     
+        // Загружаем предыдущие результаты
+        questionLimit = userResult.totalQuestions;
+        correctAnswers = userResult.score;
+        userAnswers = userResult.answers;
+        elapsedTime = userResult.timeSpent;
+        
+        // Показываем результаты
+        homeBox.classList.add("hide");
+        resultBox.classList.remove("hide");
+        quizResult();
+        loadLeaderboard();
         return;
     }
 
@@ -341,7 +388,7 @@ function loadLeaderboard() {
         if (b.score !== a.score) {
             return b.score - a.score;
         }
-        return a.nickname.localeCompare(b.nickname);
+        return a.timeSpent - b.timeSpent;
     });
 
     // Находим индекс текущего пользователя
@@ -368,6 +415,7 @@ function loadLeaderboard() {
             <th>Место</th>
             <th>Никнейм</th>
             <th>Баллы</th>
+            <th>Время, сек</th>
             <th>Дата и время</th>
         </tr>`;
     
@@ -386,6 +434,7 @@ function loadLeaderboard() {
             <td>${index + 1}</td>
             <td>${data.nickname}</td>
             <td>${data.score}</td>
+            <td>${data.timeSpent}</td>
             <td>${formattedDate}</td>
         </tr>`;
         
@@ -592,6 +641,7 @@ function loadFullLeaderboard(resetPagination = true) {
                         <th>Место</th>
                         <th>Никнейм</th>
                         <th>Баллы</th>
+                        <th>Время, сек</th>
                         <th>Дата и время</th>
                     </tr>
                 </thead>
@@ -644,9 +694,11 @@ function loadMoreItems(results, currentNickname) {
                 <td>${absoluteIndex + 1}</td>
                 <td>${data.nickname}</td>
                 <td>${data.score}</td>
+                <td>${data.timeSpent}</td>
                 <td>${formattedDate}</td>
             `;
             
+
             tbody.appendChild(row);
         });
         
@@ -668,5 +720,50 @@ function handleScroll(event) {
         const currentNickname = document.getElementById('nickname').value;
         const results = LocalStorage.getLeaderboard(selectedTopic);
         loadMoreItems(results, currentNickname);
+    }
+}
+
+function startTimer() {
+    startTime = Date.now();
+    const update = () => {
+        const now = Date.now();
+        elapsedTime = (now - startTime) / 1000;
+        const timerElement = document.querySelector('.timer');
+        if(timerElement) {
+            timerElement.textContent = Math.floor(elapsedTime);
+            requestAnimationFrame(update); // Используем rAF вместо setInterval
+        }
+    };
+    requestAnimationFrame(update);
+}
+
+function stopTimer() {
+    const elements = document.getElementsByClassName('timer');
+    while(elements.length > 0) {
+        elements[0].textContent = '0'; // Очищаем все таймеры
+    }
+    return elapsedTime.toFixed(2);
+}
+
+function updateTimer() {
+    const timerElement = document.querySelector('.timer');
+    if (timerElement) {
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        console.log('Прошло секунд:', seconds);
+        timerElement.textContent = seconds;
+    } else {
+        console.error('Элемент таймера не найден!');
+    }
+}
+
+function scrollToTop() {
+    const isSmoothScrollSupported = 'scrollBehavior' in document.documentElement.style;
+    if(isSmoothScrollSupported) {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    } else {
+        window.scrollTo(0, 0); // Фолбэк для старых браузеров
     }
 }
