@@ -104,8 +104,8 @@ class StorageFactory {
             return new LocalStorage();
         } else {
             console.log('Using Firebase');
-            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js');
-            const { getDatabase } = await import('https://www.gstatic.com/firebasejs/9.x.x/firebase-database.js');
+            // Загружаем Firebase скрипты
+            await loadFirebaseScripts();
             
             const firebaseConfig = {
                 apiKey: "AIzaSyBIBiFTvXuPSQc-RsUgBl39CCn_WkxzQnE",
@@ -114,14 +114,41 @@ class StorageFactory {
                 storageBucket: "rzv-de-quiz.firebasestorage.app",
                 messagingSenderId: "410993032742",
                 appId: "1:410993032742:web:83fa6d2d4e30e6419df0e7",
+                databaseURL: process.env.FIREBASE_DATABASE_URL
             };
 
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            return new FirebaseStorage(app, database);
+            // Инициализируем Firebase
+            firebase.initializeApp(firebaseConfig);
+            return new FirebaseStorage(firebase.app(), firebase.database());
         }
     }
 }
 
+// Функция для загрузки Firebase скриптов
+async function loadFirebaseScripts() {
+    return new Promise((resolve, reject) => {
+        // Загружаем основной скрипт Firebase
+        const firebaseApp = document.createElement('script');
+        firebaseApp.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js';
+        firebaseApp.onload = () => {
+            // После загрузки основного скрипта загружаем Database
+            const firebaseDatabase = document.createElement('script');
+            firebaseDatabase.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js';
+            firebaseDatabase.onload = resolve;
+            firebaseDatabase.onerror = reject;
+            document.head.appendChild(firebaseDatabase);
+        };
+        firebaseApp.onerror = reject;
+        document.head.appendChild(firebaseApp);
+    });
+}
+
 // Экспорт единственного экземпляра хранилища
-export const storage = await StorageFactory.create(); 
+let storageInstance = null;
+
+export async function initStorage() {
+    if (!storageInstance) {
+        storageInstance = await StorageFactory.create();
+    }
+    return storageInstance;
+} 
