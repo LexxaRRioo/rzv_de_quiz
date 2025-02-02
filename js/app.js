@@ -20,9 +20,6 @@ let currentPage = 1;
 let isLoading = false;
 let hasMoreItems = true;
 
-// Убедитесь, что эта строка не дублируется
-// const useLocalStorage = true;
-
 // Инициализация переменных таймера
 let startTime = null;
 let elapsedTime = 0;
@@ -185,11 +182,13 @@ function answersIndicator(){
     }
 }
 
-function quizOver() {
+async function quizOver() {
+    await storage.saveResult(result);
     const timeSpent = stopTimer();
     const nickname = document.getElementById('nickname').value;
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
-    
+
+
     let correctCount = 0;
     userAnswers.forEach((userAnswer, index) => {
         const question = quiz.find(q => q.q === userAnswer.question);
@@ -209,8 +208,6 @@ function quizOver() {
         topic: selectedTopic,
         timeSpent: parseFloat(timeSpent)
     };
-
-    LocalStorage.saveResult(result);
     
     quizBox.classList.add("hide");
     resultBox.classList.remove("hide");
@@ -334,9 +331,10 @@ function validateNickname(nickname) {
     return nicknameRegex.test(nickname);
 }
 
-function validateAndStartQuiz() {
+async function validateAndStartQuiz() {
     const nickname = document.getElementById('nickname').value.trim();
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
+    const userResult = await storage.getUserResult(selectedTopic, nickname);
     
     if (!nickname) {
         showError('Введи никнейм', document.querySelector('.nickname-input'));
@@ -347,9 +345,6 @@ function validateAndStartQuiz() {
         showError('Никнейм может содержать только английские буквы, цифры, _ и -', document.querySelector('.nickname-input'));
         return;
     }
-
-    // Проверяем существующие результаты
-    const userResult = LocalStorage.getUserResult(selectedTopic, nickname);
     
     if (userResult) {     
         // Загружаем предыдущие результаты
@@ -370,13 +365,13 @@ function validateAndStartQuiz() {
     startQuiz();
 }
 
-function loadLeaderboard() {
+async function loadLeaderboard() {
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     const currentNickname = document.getElementById('nickname').value;
     console.log('Loading leaderboard for topic:', selectedTopic);
     
     const leaderboardDiv = document.getElementById('leaderboard-content');
-    const results = LocalStorage.getLeaderboard(selectedTopic);
+    const results = await storage.getLeaderboard(selectedTopic);
     
     if (!results || results.length === 0) {
         leaderboardDiv.innerHTML = '<p>Пока нет результатов</p>';
@@ -535,8 +530,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function loadPreviousResults(nickname, topic) {
-    const results = LocalStorage.getLeaderboard(topic);
+async function loadPreviousResults(nickname, topic) {
+    const results = await storage.getLeaderboard(topic);
     const userResult = results.find(r => r.nickname === nickname);
     
     if (!userResult) {
@@ -625,11 +620,12 @@ function hideFullLeaderboard() {
     hasMoreItems = true;
 }
 
-function loadFullLeaderboard(resetPagination = true) {
+async function loadFullLeaderboard(resetPagination = true) {
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     const currentNickname = document.getElementById('nickname').value;
-    const results = LocalStorage.getLeaderboard(selectedTopic);
+    const results = await storage.getLeaderboard(selectedTopic);
     
+
     if (resetPagination) {
         currentPage = 1;
         hasMoreItems = true;
@@ -712,13 +708,14 @@ function loadMoreItems(results, currentNickname) {
     }, 300);
 }
 
-function handleScroll(event) {
+async function handleScroll(event) {
     const element = event.target;
     // Загружаем новые элементы, когда пользователь прокрутил до конца с небольшим запасом
     if (element.scrollHeight - element.scrollTop - element.clientHeight < 100) {
+
         const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
         const currentNickname = document.getElementById('nickname').value;
-        const results = LocalStorage.getLeaderboard(selectedTopic);
+        const results = await storage.getLeaderboard(selectedTopic);
         loadMoreItems(results, currentNickname);
     }
 }
