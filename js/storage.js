@@ -104,20 +104,18 @@ class StorageFactory {
             return new LocalStorage();
         } else {
             console.log('Using Firebase');
-            // Загружаем Firebase скрипты
             await loadFirebaseScripts();
             
             const firebaseConfig = {
-                apiKey: process.env.FIREBASE_API_KEY,
-                authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-                messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-                appId: process.env.FIREBASE_APP_ID,
-                databaseURL: process.env.FIREBASE_DATABASE_URL
+                apiKey: "__FIREBASE_API_KEY__",
+                authDomain: "__FIREBASE_AUTH_DOMAIN__",
+                projectId: "__FIREBASE_PROJECT_ID__",
+                storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+                messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+                appId: "__FIREBASE_APP_ID__",
+                databaseURL: "__FIREBASE_DATABASE_URL__"
             };
 
-            // Инициализируем Firebase
             firebase.initializeApp(firebaseConfig);
             return new FirebaseStorage(firebase.app(), firebase.database());
         }

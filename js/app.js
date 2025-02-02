@@ -25,6 +25,8 @@ let startTime = null;
 let elapsedTime = 0;
 let timerInterval = null;
 
+clearErrorMessages();
+
 // Проверка наличия элемента таймера при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     const timerElement = document.querySelector('.quiz-box .timer');
@@ -760,4 +762,9 @@ function scrollToTop() {
     } else {
         window.scrollTo(0, 0); // Фолбэк для старых браузеров
     }
+}
+
+function clearErrorMessages() {
+    const errorMessages = document.querySelectorAll('.error-message');
+    errorMessages.forEach(message => message.remove());
 }
