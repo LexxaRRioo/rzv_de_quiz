@@ -104,9 +104,9 @@
         <button type="button" class="btn go-back-btn" onclick="hideFullLeaderboard()">Назад</button>
     </div>
 
+    <script src="js/config.js"></script>
     <script type="module">
         import { initStorage } from './js/storage.js';
-        // Инициализируем хранилище при загрузке страницы
         window.initializeApp = async () => {
             window.storage = await initStorage();
         };

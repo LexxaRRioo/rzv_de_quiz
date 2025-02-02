@@ -106,17 +106,7 @@ class StorageFactory {
             console.log('Using Firebase');
             await loadFirebaseScripts();
             
-            const firebaseConfig = {
-                apiKey: "AIzaSyBIBiFTvXuPSQc-RsUgBl39CCn_WkxzQnE",
-                authDomain: "rzv-de-quiz.firebaseapp.com",
-                projectId: "rzv-de-quiz",
-                storageBucket: "rzv-de-quiz.firebasestorage.app",
-                messagingSenderId: "410993032742",
-                appId: "1:410993032742:web:83fa6d2d4e30e6419df0e7",
-                databaseURL: ""
-            };
-
-            firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(window.appConfig.firebase);
             return new FirebaseStorage(firebase.app(), firebase.database());
         }
     }
