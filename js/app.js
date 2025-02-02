@@ -106,15 +106,15 @@ function next() {
         .filter(opt => opt.classList.contains('selected'))
         .map(opt => parseInt(opt.id));
     
-    // Validate selection
-    if (selectedOptions.length === 0) {
-        showError('Пожалуйста, выберите ответ', optionContainer);
+    // For multiple choice questions, validate at least one option is selected
+    if (currentQuestion.isMultiple && selectedOptions.length === 0) {
+        showError('Выберите хотя бы один вариант ответа', document.querySelector('.option-container'));
         return;
     }
     
-    // For multiple choice questions, validate at least one option is selected
-    if (currentQuestion.isMultiple && selectedOptions.length === 0) {
-        showError('Выберите хотя бы один вариант ответа', optionContainer);
+    // Validate selection
+    if (selectedOptions.length === 0) {
+        showError('Выберите ответ', document.querySelector('.option-container'));
         return;
     }
 
@@ -292,14 +292,22 @@ function startQuiz() {
     answersIndicator();
 }
 
+function validateNickname(nickname) {
+    const nicknameRegex = /^[a-zA-Z0-9_-]+$/;
+    return nicknameRegex.test(nickname);
+}
+
 function validateAndStartQuiz() {
     const nickname = document.getElementById('nickname').value.trim();
     const selectedTopic = document.querySelector('.dropdown-content .dropdown-item.selected').getAttribute('data-value');
     
-    console.log('Validating quiz start:', { nickname, selectedTopic });
-    
     if (!nickname) {
-        alert('Пожалуйста, введите никнейм');
+        showError('Введите никнейм', document.querySelector('.nickname-input'));
+        return;
+    }
+
+    if (!validateNickname(nickname)) {
+        showError('Никнейм может содержать только английские буквы, цифры, _ и -', document.querySelector('.nickname-input'));
         return;
     }
 
@@ -307,22 +315,10 @@ function validateAndStartQuiz() {
     const userResult = LocalStorage.getUserResult(selectedTopic, nickname);
     
     if (userResult) {
-        console.log('Found existing result:', userResult);
-        showError('Тест уже пройден, вы можете посмотреть результаты');
-        // Загружаем предыдущие результаты
-        questionLimit = userResult.totalQuestions;
-        correctAnswers = userResult.score;
-        userAnswers = userResult.answers;
-        
-        // Показываем результаты
-        quizBox.classList.add("hide");
-        resultBox.classList.remove("hide");
-        quizResult();
-        loadLeaderboard();
+        showError('Тест уже пройден, вы можете посмотреть результаты', document.querySelector('.button-group'));
         return;
     }
 
-    // Если результатов нет, начинаем новый тест
     resetQuiz();
     startQuiz();
 }
