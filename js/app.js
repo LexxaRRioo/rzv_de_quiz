@@ -44,13 +44,13 @@ function getNewQuestion(){
     }
 
     questionNumber.innerHTML = "Вопрос " + (questionCounter + 1) + " из " + questionLimit;
-    const questionIndex = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-    currentQuestion = questionIndex;
-    console.log("Текущий вопрос:", JSON.stringify(currentQuestion)); // Логируем текущий вопрос
+    
+    // Берем вопросы последовательно, а не случайно
+    currentQuestion = availableQuestions[0];
+    console.log("Текущий вопрос:", JSON.stringify(currentQuestion));
 
     questionText.innerHTML = currentQuestion.q;
-    const index1 = availableQuestions.indexOf(questionIndex);
-    availableQuestions.splice(index1, 1);
+    availableQuestions.splice(0, 1);
     
     const optionsLength = currentQuestion.options.length;
     for (let i = 0; i < optionsLength; i++) {
@@ -78,13 +78,22 @@ function getNewQuestion(){
         multipleChoiceText.innerHTML = "<small style='color: gray;'>Множественный выбор</small>";
         questionNumber.appendChild(multipleChoiceText);
     }
-
-    questionCounter++;
 }
 
 function toggleSelection(element) {
-    console.log("Клик на вариант ответа:", element.innerHTML); // Логируем клик на вариант ответа
-    element.classList.toggle('selected'); // Подсвечиваем выбранный элемент
+    console.log("Клик на вариант ответа:", element.innerHTML);
+    
+    if (!currentQuestion.isMultiple) {
+        // Для одиночного выбора снимаем выделение со всех элементов
+        Array.from(optionContainer.children).forEach(opt => {
+            opt.classList.remove('selected');
+            console.log(`Снято выделение с: ${opt.innerHTML}`);
+        });
+    }
+    
+    // Добавляем/убираем класс selected для текущего элемента
+    element.classList.toggle('selected');
+    console.log(`Текущее состояние для ${element.innerHTML}: ${element.classList.contains('selected') ? 'выбрано' : 'не выбрано'}`);
 }
 
 function next() {
@@ -97,10 +106,14 @@ function next() {
         selected: selectedOptions
     });
 
-    if (questionCounter === questionLimit) {
-        quizOver();
-    } else {
+    // Увеличиваем счетчик только здесь
+    questionCounter++;
+
+    if (questionCounter < questionLimit) {
         getNewQuestion();
+        answersIndicator(); // Обновляем индикаторы после каждого вопроса
+    } else {
+        quizOver();
     }
 }
 
@@ -109,6 +122,10 @@ function answersIndicator(){
     const totalQuestion = questionLimit;
     for(let i=0; i<totalQuestion; i++){
         const indicator = document.createElement("div");
+        // Отмечаем все предыдущие вопросы как отвеченные
+        if (i < questionCounter) {
+            indicator.classList.add('answered');
+        }
         answersIndicatorContainer.appendChild(indicator);
     }
 }
@@ -223,6 +240,12 @@ function goToHome(){
 function startQuiz(){
     homeBox.classList.add("hide");
     quizBox.classList.remove("hide");
+    // Сбрасываем счетчики
+    questionCounter = 0;
+    correctAnswers = 0;
+    attempt = 0;
+    userAnswers = [];
+    
     setAvailableQuestions();
     getNewQuestion();
     answersIndicator();
@@ -265,14 +288,6 @@ function loadLeaderboard() {
     
     html += '</table>';
     leaderboardDiv.innerHTML = html;
-}
-
-window.onload = function (){
-    homeBox.querySelector(".total-question").innerHTML = "" + questionLimit;
-    const dropdownItems = document.querySelectorAll('.dropdown-item');
-    if (dropdownItems.length > 0) {
-        dropdownItems[0].click(); // Выбираем первый элемент по умолчанию
-    }
 }
 
 function toggleDropdown(button) {
@@ -322,6 +337,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Устанавливаем выбранный элемент как активный
             dropdownItems.forEach(i => i.classList.remove('selected'));
             this.classList.add('selected');
+            
+            // Обновляем questionLimit при выборе топика
+            setAvailableQuestions();
         });
     });
     
@@ -331,4 +349,9 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdownBtn.querySelector('.arrow').style.transform = 'rotate(0deg)';
         }
     });
+
+    // Выбираем первый элемент по умолчанию
+    if (dropdownItems.length > 0) {
+        dropdownItems[0].click(); // Это действие выберет первый элемент
+    }
 });

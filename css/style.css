@@ -71,8 +71,8 @@ body {
 }
 
 .option:hover {
-    box-shadow: 0 0 0 1.5px rgb(0 0 0 / 40%);
-    transform: box-shadow, scale(1.1) 200ms ease-in;
+    background-color: #f8f8f8;
+    border-color: #17A4CB;
 }
 
 .btn {
@@ -145,7 +145,7 @@ body {
     color: black;
     line-height: 22px;
     padding: 13px 15px;
-    background-color: #cccccc;
+    background-color: transparent;
     margin-bottom: 10px;
     border-radius: 5px;
     cursor: pointer;
@@ -222,29 +222,23 @@ body {
     height: 40px;
     width: 40px;
     display: inline-block;
-    background-color: #cccccc;
+    background-color: transparent;
+    border: 2px solid #cccccc;
     border-radius: 50%;
     margin: 15px 5px;
 }
 
-.quiz-box .answers-indicator div.correct {
-    background-color: green;
-    background-image: url("../img/correct.png");
-    background-size: 50%;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-.quiz-box .answers-indicator div.wrong {
-    background-color: red;
-    background-image: url("../img/wrong.png");
-    background-size: 50%;
-    background-repeat: no-repeat;
-    background-position: center;
+.quiz-box .answers-indicator div.answered {
+    background-color: #17A4CB;
+    border-color: #17A4CB;
 }
 
 .result-box {
-    text-align: center;
+    text-align: left;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .result-box.hide {
@@ -252,24 +246,31 @@ body {
 }
 
 .result-box h1 {
-    font-size: 36px;
-    line-height: 42px;
-    color: #17A4CB;
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
 }
 
 .result-box table {
     width: 100%;
-    border-collapse: collapse;
     margin: 30px 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
 }
 
 .result-box table td {
-    border: 1px solid #cccccc;
-    padding: 8px 15px;
-    font-weight: 500;
-    color: black;
+    padding: 15px 20px;
+    border: 1px solid #eee;
     text-align: left;
-    font-size: 18px;
+}
+
+.result-box table td:first-child {
+    font-weight: 500;
+    background-color: #f8f8f8;
+    width: 60%;
 }
 
 .result-box .btn {
@@ -401,41 +402,77 @@ body {
     width: 100%;
 }
 
-.option.selected {
-    background-color: #f1f1f1;
-}
-
 .option {
     background-color: #ffffff;
-    padding: 15px;
+    padding: 15px 20px;
     border-radius: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     cursor: pointer;
-    border: 1px solid #cccccc;
-    transition: background-color 0.3s ease;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.option:hover {
+    background-color: #f8f8f8;
+    border-color: #17A4CB;
+}
+
+.option.selected {
+    border: 3px solid #17A4CB;
 }
 
 .question-result {
-    margin: 20px 0;
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 5px;
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: left;
 }
 
 .question-result p {
-    margin: 10px 0;
+    margin: 12px 0;
+    line-height: 1.6;
+}
+
+.question-result p:first-child {
+    margin-top: 0;
+}
+
+.question-result p:last-child {
+    margin-bottom: 0;
+}
+
+.question-result strong {
+    color: #333;
+    font-size: 17px;
 }
 
 .explanation {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
     color: #666;
     font-style: italic;
-    margin-top: 10px;
+}
+
+#correct-answers,
+#wrong-answers {
+    margin: 40px 0;
+    text-align: left;
 }
 
 #correct-answers h3,
 #wrong-answers h3 {
-    margin: 20px 0 10px;
     color: #333;
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+    text-align: left;
 }
 
 #correct-answers .question-result {
@@ -444,4 +481,38 @@ body {
 
 #wrong-answers .question-result {
     border-left: 4px solid #f44336;
+}
+
+.leaderboard {
+    margin-top: 40px;
+    text-align: left;
+}
+
+.leaderboard h2 {
+    text-align: left;
+}
+
+#leaderboard-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+}
+
+#leaderboard-content th,
+#leaderboard-content td {
+    padding: 12px 20px;
+    border: 1px solid #eee;
+    text-align: left;
+}
+
+#leaderboard-content th {
+    background-color: #f8f8f8;
+    font-weight: 500;
+}
+
+#leaderboard-content tr:hover {
+    background-color: #f8f8f8;
 }
